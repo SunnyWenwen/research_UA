@@ -1,0 +1,4 @@
+# 產生的中間檔
+*.clean.sql
+__pycache__/
+*.pyc

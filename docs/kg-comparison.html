@@ -1,0 +1,1076 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>三套程式碼知識圖譜的建與用</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+TC:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@600&display=swap">
+
+<style>
+:root{
+  --paper:#f4f6f7;
+  --surface:#ffffff;
+  --surface-2:#eaeef0;
+  --ink:#14191c;
+  --ink-2:#414d54;
+  --ink-3:#6b7b84;
+  --rule:#d3dbdf;
+  --rule-strong:#b3c0c6;
+  --accent:#1f6b63;
+  --accent-soft:#dfece9;
+
+  /* 內容語意色：邊是怎麼產生的 —— 整份比較最重要的一軸 */
+  --det:#1f6b63;        --det-bg:#dfece9;
+  --heur:#8a6115;       --heur-bg:#f3e9d5;
+  --llm:#8e3f47;        --llm-bg:#f4e2e3;
+
+  --ua:#8e3f47;
+  --gf:#8a6115;
+  --cg:#1f6b63;
+
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:'IBM Plex Sans','IBM Plex Sans TC',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --serif:'IBM Plex Serif','Noto Serif TC',Georgia,serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0e1315;
+    --surface:#161d20;
+    --surface-2:#1e272b;
+    --ink:#e6edef;
+    --ink-2:#aebbc1;
+    --ink-3:#7f9097;
+    --rule:#2a363b;
+    --rule-strong:#3d4d54;
+    --accent:#5fbcaf;
+    --accent-soft:#16302d;
+    --det:#5fbcaf;   --det-bg:#14302c;
+    --heur:#d6a856;  --heur-bg:#33280f;
+    --llm:#dd8d95;   --llm-bg:#361d20;
+    --ua:#dd8d95; --gf:#d6a856; --cg:#5fbcaf;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0e1315;
+  --surface:#161d20;
+  --surface-2:#1e272b;
+  --ink:#e6edef;
+  --ink-2:#aebbc1;
+  --ink-3:#7f9097;
+  --rule:#2a363b;
+  --rule-strong:#3d4d54;
+  --accent:#5fbcaf;
+  --accent-soft:#16302d;
+  --det:#5fbcaf;   --det-bg:#14302c;
+  --heur:#d6a856;  --heur-bg:#33280f;
+  --llm:#dd8d95;   --llm-bg:#361d20;
+  --ua:#dd8d95; --gf:#d6a856; --cg:#5fbcaf;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1140px;margin:0 auto;padding:0 20px;padding-block:0 72px}
+
+/* ── header ─────────────────────────────────── */
+header{
+  border-bottom:2px solid var(--ink);
+  padding-block:52px 22px;
+  margin-bottom:40px;
+}
+.eyebrow{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-3);
+  margin:0 0 14px;
+}
+h1{
+  font-family:var(--serif);
+  font-weight:600;
+  font-size:clamp(30px,5vw,46px);
+  line-height:1.15;
+  letter-spacing:-.015em;
+  margin:0 0 16px;
+  text-wrap:balance;
+}
+.standfirst{
+  max-width:62ch;
+  font-size:16px;
+  color:var(--ink-2);
+  margin:0;
+}
+.standfirst b{color:var(--ink);font-weight:600}
+
+/* ── tool key ───────────────────────────────── */
+.key{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+  gap:1px;
+  background:var(--rule);
+  border:1px solid var(--rule);
+  margin:34px 0 0;
+}
+.key > div{background:var(--surface);padding:15px 17px}
+.key h3{
+  font-family:var(--mono);
+  font-size:13px;
+  font-weight:500;
+  margin:0 0 5px;
+  letter-spacing:.01em;
+}
+.key .ua h3{color:var(--ua)} .key .gf h3{color:var(--gf)} .key .cg h3{color:var(--cg)}
+.key p{margin:0;font-size:13px;color:var(--ink-3);line-height:1.5}
+
+/* ── sections ───────────────────────────────── */
+section{margin-top:64px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:10px;flex-wrap:wrap}
+.sec-num{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--accent);
+  border:1px solid var(--accent);
+  padding:2px 8px;
+  letter-spacing:.06em;
+}
+h2{
+  font-family:var(--serif);
+  font-weight:600;
+  font-size:clamp(21px,3.2vw,28px);
+  margin:0;
+  letter-spacing:-.01em;
+}
+.sec-intro{max-width:64ch;color:var(--ink-2);margin:0 0 26px;font-size:14.5px}
+
+/* ── table ──────────────────────────────────── */
+.scroller{
+  overflow-x:auto;
+  border:1px solid var(--rule-strong);
+  background:var(--surface);
+}
+table{border-collapse:collapse;width:100%;min-width:830px;font-size:13.5px}
+thead th{
+  position:sticky;top:0;
+  background:var(--surface-2);
+  text-align:left;
+  font-family:var(--mono);
+  font-weight:500;
+  font-size:12.5px;
+  padding:11px 14px;
+  border-bottom:2px solid var(--rule-strong);
+  white-space:nowrap;
+}
+thead th.t-ua{color:var(--ua)} thead th.t-gf{color:var(--gf)} thead th.t-cg{color:var(--cg)}
+thead th:first-child{color:var(--ink-3)}
+tbody th{
+  text-align:left;
+  font-weight:500;
+  color:var(--ink);
+  padding:12px 14px;
+  vertical-align:top;
+  width:150px;
+  min-width:150px;
+  background:var(--surface);
+  border-right:1px solid var(--rule-strong);
+  font-size:13px;
+}
+tbody td{
+  padding:12px 14px;
+  vertical-align:top;
+  border-right:1px solid var(--rule);
+  color:var(--ink-2);
+  width:26%;
+}
+tbody td:last-child{border-right:none}
+tbody tr{border-bottom:1px solid var(--rule)}
+tbody tr:last-child{border-bottom:none}
+tbody tr.pivot{background:var(--accent-soft)}
+tbody tr.pivot th{background:var(--accent-soft)}
+tbody tr.pivot th::after{
+  content:'關鍵差異';
+  display:block;
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:.1em;
+  color:var(--accent);
+  margin-top:3px;
+}
+td b{color:var(--ink);font-weight:600}
+code,.m{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 4px;border-radius:2px;color:var(--ink);word-break:break-word}
+
+/* provenance chips — 內容語意，不是裝飾 */
+.chip{
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:10.5px;
+  letter-spacing:.06em;
+  padding:1px 6px;
+  margin-bottom:5px;
+  border-radius:2px;
+  white-space:nowrap;
+}
+.chip.det{background:var(--det-bg);color:var(--det)}
+.chip.heur{background:var(--heur-bg);color:var(--heur)}
+.chip.llm{background:var(--llm-bg);color:var(--llm)}
+.chip.none{background:var(--surface-2);color:var(--ink-3)}
+
+.src{
+  display:block;
+  font-family:var(--mono);
+  font-size:10.5px;
+  color:var(--ink-3);
+  margin-top:6px;
+  line-height:1.45;
+  word-break:break-all;
+}
+.no{color:var(--llm);font-weight:600}
+.yes{color:var(--det);font-weight:600}
+
+/* ── 五欄表（共通欄） ───────────────────────── */
+table.wide5{min-width:1180px}
+table.wide5 tbody td{width:auto}
+thead th.t-shared{color:var(--accent)}
+td.shared{
+  background:var(--accent-soft);
+  color:var(--ink);
+  width:19%;
+  border-right:2px solid var(--accent);
+}
+td.shared.none{
+  background:var(--surface-2);
+  color:var(--ink-3);
+  text-align:center;
+  border-right:1px solid var(--rule);
+}
+td.na{color:var(--ink-3)}
+.nanote{
+  display:block;font-size:11.5px;color:var(--ink-3);
+  margin-top:5px;line-height:1.45;font-style:italic;
+}
+pre.ex{
+  font-family:var(--mono);font-size:10.5px;line-height:1.55;
+  background:var(--surface-2);color:var(--ink-2);
+  padding:10px 11px;margin:9px 0 0;border-radius:2px;
+  overflow-x:auto;white-space:pre;
+}
+
+/* ── 小標 ───────────────────────────────────── */
+h3.sub{
+  font-family:var(--serif);font-weight:600;font-size:18px;
+  margin:44px 0 8px;letter-spacing:-.005em;
+}
+section > h3.sub:first-of-type{margin-top:34px}
+
+/* ── 三段流程 ───────────────────────────────── */
+.steps{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;
+  background:var(--rule-strong);border:1px solid var(--rule-strong);
+}
+.steps > div{background:var(--surface);padding:17px 18px;position:relative}
+.stepno{
+  font-family:var(--mono);font-size:20px;color:var(--accent);
+  display:block;margin-bottom:6px;line-height:1;
+}
+.stept{font-family:var(--serif);font-size:16px;font-weight:600;margin:0 0 8px;color:var(--ink)}
+.steps p{margin:0 0 9px;font-size:13px;color:var(--ink-2);line-height:1.55}
+.stepout{
+  font-family:var(--mono);font-size:12px;color:var(--accent);
+  margin:0!important;padding-top:9px;border-top:1px dashed var(--rule-strong);
+}
+@media (max-width:700px){.steps{grid-template-columns:1fr}}
+
+/* ── 階梯 ───────────────────────────────────── */
+.ladder{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:6px;
+}
+.ladder > div{border-top:3px solid;padding-top:13px}
+.ladder .ua{border-color:var(--ua)}
+.ladder .gf{border-color:var(--gf)}
+.ladder .cg{border-color:var(--cg)}
+.ladder .lvl{
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;margin:0 0 4px;
+}
+.ladder .ua .lvl{color:var(--ua)}
+.ladder .gf .lvl{color:var(--gf)}
+.ladder .cg .lvl{color:var(--cg)}
+.ladder h4{font-family:var(--mono);font-size:13px;font-weight:500;margin:0 0 7px;color:var(--ink)}
+.ladder p{margin:0;font-size:13px;color:var(--ink-2);line-height:1.55}
+@media (max-width:700px){.ladder{grid-template-columns:1fr}}
+
+/* ── 因果鏈 ─────────────────────────────────── */
+.chain{display:flex;flex-direction:column;gap:0;margin-top:6px}
+.chain > div{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:13px 16px;background:var(--surface);
+  border:1px solid var(--rule);border-bottom:none;
+}
+.chain > div:last-child{border-bottom:1px solid var(--rule)}
+.chain > div.last{background:var(--llm-bg);border-color:var(--llm)}
+.chain .cn{
+  font-family:var(--mono);font-size:12px;flex:none;
+  width:22px;height:22px;line-height:21px;text-align:center;
+  border:1px solid var(--accent);color:var(--accent);border-radius:50%;
+}
+.chain > div.last .cn{border-color:var(--llm);color:var(--llm);font-weight:600}
+.chain p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.6}
+.chain > div.last p{color:var(--ink)}
+
+/* ── 高亮警示塊（表格內） ───────────────────── */
+.alarm{
+  background:var(--llm-bg);
+  border-left:3px solid var(--llm);
+  padding:9px 11px;
+  margin:0 0 11px;
+  font-size:13px;
+  line-height:1.55;
+  color:var(--ink);
+}
+.alarm b{color:var(--llm)}
+
+/* ── 方向性流程 ─────────────────────────────── */
+.flow{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:1px;
+  background:var(--rule-strong);
+  border:1px solid var(--rule-strong);
+  margin:28px 0 0;
+}
+.flow > div{background:var(--surface);padding:16px 18px}
+.flow .stage{
+  font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 8px;
+}
+.flow .state{
+  font-family:var(--serif);font-size:19px;font-weight:600;margin:0 0 6px;
+}
+.flow .state.dir{color:var(--accent)}
+.flow .state.undir{color:var(--heur)}
+.flow p{margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.5}
+@media (max-width:640px){.flow{grid-template-columns:1fr}}
+
+/* ── 陷阱 ───────────────────────────────────── */
+.trap{
+  border-left:3px solid var(--llm);
+  background:var(--surface);
+  padding:15px 18px;
+  margin-top:18px;
+}
+.trap h4{
+  font-family:var(--mono);font-size:12.5px;font-weight:500;
+  color:var(--llm);margin:0 0 7px;
+}
+.trap p{margin:0 0 9px;font-size:13.5px;color:var(--ink-2)}
+.trap p:last-child{margin-bottom:0}
+.trap pre{
+  font-family:var(--mono);font-size:11.5px;background:var(--surface-2);
+  padding:9px 11px;margin:0 0 9px;overflow-x:auto;color:var(--ink-2);
+  border-radius:2px;line-height:1.5;
+}
+
+/* ── legend ─────────────────────────────────── */
+.legend{
+  display:flex;gap:22px;flex-wrap:wrap;
+  margin:14px 0 0;font-size:12.5px;color:var(--ink-3);
+}
+.legend span{display:flex;align-items:center;gap:7px}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+
+/* ── verdict ────────────────────────────────── */
+.verdict{
+  margin-top:70px;
+  border-top:2px solid var(--ink);
+  padding-top:30px;
+}
+.verdict-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:26px;
+  margin-top:24px;
+}
+.verdict-grid > div{border-top:3px solid;padding-top:14px}
+.verdict-grid .ua{border-color:var(--ua)}
+.verdict-grid .gf{border-color:var(--gf)}
+.verdict-grid .cg{border-color:var(--cg)}
+.verdict-grid h4{
+  font-family:var(--mono);font-size:13px;font-weight:500;margin:0 0 8px;
+}
+.verdict-grid .ua h4{color:var(--ua)}
+.verdict-grid .gf h4{color:var(--gf)}
+.verdict-grid .cg h4{color:var(--cg)}
+.verdict-grid p{margin:0 0 10px;font-size:13.5px;color:var(--ink-2)}
+.verdict-grid p.lead{color:var(--ink);font-family:var(--serif);font-size:16px;line-height:1.45}
+
+.axis{
+  margin-top:44px;
+  background:var(--surface);
+  border:1px solid var(--rule-strong);
+  padding:24px 22px;
+}
+.axis h3{font-family:var(--serif);font-weight:600;font-size:18px;margin:0 0 6px}
+.axis p{margin:0 0 20px;color:var(--ink-2);font-size:14px;max-width:62ch}
+.rail{position:relative;height:auto;padding-top:26px}
+.rail-line{height:2px;background:linear-gradient(90deg,var(--cg),var(--gf),var(--ua));margin-bottom:12px}
+.rail-labels{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px}
+.rail-labels span:nth-child(1){color:var(--cg)}
+.rail-labels span:nth-child(2){color:var(--gf)}
+.rail-labels span:nth-child(3){color:var(--ua);text-align:right}
+.rail-ends{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-3);margin-top:7px}
+
+footer{
+  margin-top:56px;padding-top:20px;border-top:1px solid var(--rule);
+  font-size:12px;color:var(--ink-3);font-family:var(--mono);line-height:1.8;
+}
+footer b{color:var(--ink-2);font-weight:500}
+
+@media (max-width:640px){
+  .wrap{padding:0 16px;padding-block:0 56px}
+  header{padding-block:36px 18px}
+  tbody th{width:118px;min-width:118px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<style>
+:root{color-scheme:light dark}
+body{margin:0}img{max-width:100%}[hidden]{display:none!important}
+@media print{
+  @page{size:A4 landscape;margin:11mm}
+  :root{--paper:#fff;--surface:#fff;--surface-2:#f2f5f6;--ink:#111;--ink-2:#333;--ink-3:#666;--rule:#ccc;--rule-strong:#999}
+  body{background:#fff;font-size:9.5pt}
+  .wrap{max-width:none;padding:0}
+  .scroller{overflow:visible;border:1px solid #999}
+  table{min-width:0;font-size:8pt}table.wide5{min-width:0}
+  thead th{position:static;background:#f2f5f6}
+  section,.verdict,.trap,.flow,.key,.alarm,.steps,.ladder,.chain{break-inside:avoid;page-break-inside:avoid}
+  section{margin-top:26px}header{padding-block:0 12px}
+  h3.sub{margin-top:24px}
+  tbody tr{break-inside:avoid;page-break-inside:avoid}
+  a{text-decoration:none;color:inherit}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">技術分享 · 程式碼知識圖譜</p>
+  <h1>三套程式碼知識圖譜的建與用</h1>
+  <p class="standfirst">
+    Understand&#8209;Anything、graphify、codegraph 都說自己能「替 codebase 建知識圖譜」。
+    它們建出來的圖，<b>可信度差很多</b>。這份文件說明差在哪、以及各自適合什麼場合。
+  </p>
+</header>
+
+<!-- ══════════ 導讀 ══════════ -->
+<section style="margin-top:44px">
+  <div class="sec-head"><h2>先講清楚：知識圖譜是什麼</h2></div>
+
+  <div class="flow" style="margin-top:20px">
+    <div>
+      <p class="stage">node（節點）</p>
+      <p class="state dir">程式裡的東西</p>
+      <p>一個 class、一個 method、一個欄位。有些工具還會有資料表。</p>
+    </div>
+    <div>
+      <p class="stage">edge（關係）</p>
+      <p class="state dir">node 之間的關係</p>
+      <p>A 呼叫 B、A 繼承 B、A 引用 B。<b>這才是圖的價值所在。</b></p>
+    </div>
+    <div>
+      <p class="stage">用途</p>
+      <p class="state dir">讓 AI 看懂架構</p>
+      <p>不用把整個 repo 塞進去，就能回答「這支 API 會動到什麼」。</p>
+    </div>
+  </div>
+
+  <div class="trap" style="border-left-color:var(--accent)">
+    <h4 style="color:var(--accent)">核心問題：node 容易，edge 很難</h4>
+    <p>
+      抓 <b>node</b> 很簡單 —— AST（程式碼的語法樹）裡白紙黑字寫著 <code>class UserService</code>，
+      解析器照著抄就好。
+    </p>
+    <p>
+      抓 <b>edge</b> 很難。AST 只告訴你「這一行有一個叫 <code>findById</code> 的呼叫」，
+      <b>但不會告訴你那是哪一個 <code>findById</code></b>。大型專案裡可能有十七個同名 method，
+      分散在十七個 class。<b>AST 本身給不出答案</b> —— 必須另外做型別推導。連錯一條，後面所有推論都跟著錯。
+    </p>
+    <p><b>三套工具對這個問題，給了三個完全不同的答案：</b></p>
+  </div>
+
+  <div class="key" style="margin-top:20px">
+    <div class="ua">
+      <h3>Understand-Anything</h3>
+      <p><b>不做型別推導，直接問 LLM：「你覺得是哪一個？」</b><br>快、什麼語言都能處理，但 LLM 猜錯了你看不出來 —— 圖上沒有任何記號區分「AST 抓的」和「LLM 猜的」。</p>
+    </div>
+    <div class="gf">
+      <h3>graphify</h3>
+      <p><b>從 AST 做型別推導。</b><br>查 <code>userService</code> 宣告成什麼 class，順著型別找到那個 class 裡的 method。<b>推導不出來就不建 edge</b> —— 寧可漏，不亂連。</p>
+    </div>
+    <div class="cg">
+      <h3>codegraph</h3>
+      <p><b>同樣從 AST 做型別推導，但多走一步。</b><br>如果變數宣告成介面，它會再往下找實作 —— 這正是 Spring 專案最需要的那一跳。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 1 ══════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">01</span>
+    <h2>怎麼建圖</h2>
+  </div>
+  <p class="sec-intro">
+    「三者共通」欄寫三套一致的地方；只要有一套不同，差異就落到各自的欄位。
+    <b>真正的分水嶺只有第 3 列</b>，其他幾列大同小異。
+  </p>
+
+  <div class="scroller">
+  <table class="wide5">
+    <thead>
+      <tr>
+        <th>比較項目</th>
+        <th class="t-shared">三者共通</th>
+        <th class="t-ua">Understand-Anything</th>
+        <th class="t-gf">graphify</th>
+        <th class="t-cg">codegraph</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>1 · 怎麼解析程式碼</th>
+        <td class="shared"><b>三套都用同一套解析器（tree-sitter）</b>把程式碼拆成 <b>AST</b>（抽象語法樹）。<br><br>所以「都是 AST + 靜態分析」這句話對三者都成立 —— <b>這句話沒有鑑別度</b>。</td>
+        <td>只有 10 種語言讀得懂。其餘（Kotlin、Swift、PowerShell…）<b>交給 AI 讀原始碼補</b></td>
+        <td>語言涵蓋最廣。SQL 要另外裝套件，<b>沒裝也不會報錯，只是安靜地漏掉</b></td>
+        <td>安裝最單純（免編譯、跨平台）。<b>不支援 SQL</b></td>
+      </tr>
+
+      <tr>
+        <th>2 · node 怎麼來</th>
+        <td class="shared"><b>三套的 node 都是從 AST 的宣告節點抓出來的</b>：class、method、欄位。<br><br>node id 都帶檔案路徑，所以同名不會撞在一起。</td>
+        <td>node 本身是 AST 抓的，<b>但每個 node 多一段 LLM 寫的說明文字</b>。<br><br>好處是用業務術語搜也可能搜到；壞處是那段說明沒人驗證過</td>
+        <td><b>會讀 <code>.sql</code> 檔</b>，建出資料表、View、預存程序的 node<br><br>（已實測：Oracle 的 <code>"SCHEMA"."TABLE"</code> 格式抓得到）</td>
+        <td>node 種類最多（24 種，含 API 路由、前端元件）<br><br><b>但沒有資料表 node</b></td>
+      </tr>
+
+      <tr class="pivot">
+        <th>3 · edge 怎麼來</th>
+        <td class="shared">
+          <b>import edge（檔案之間的引用）三套都是從 AST 確定解析的</b> —— 這部分都可信。<br><br>
+          差別全在 <b>calls edge</b>（A 呼叫 B）上 —— 而那正好是整張圖最有價值的部分。
+        </td>
+        <td>
+          <div class="alarm">
+            <b>calls edge 不是 AST 來的，是 LLM 產生的。</b><br>
+            node 用 AST 抓，calls edge 改叫 LLM 猜 —— <b>同一張圖裡混了兩種來源</b>。
+          </div>
+          給 LLM 的指令原文：「<i>從 import 和函式名稱<b>推測</b>，有信心的話就寫下來</i>」。<br><br>
+          它連資料結構都撐不住這件事：記錄呼叫的欄位<b>只有「誰呼叫誰」和行號，沒有欄位能記「對方在哪個檔案」</b> ——
+          所以<b>跨檔案的呼叫它結構上就存不下來</b>。<br><br>
+          原始碼裡有一個建立跨檔案 calls edge 的函式，但<b>全專案沒有任何一處呼叫它</b>。<br><br>
+          最後：<b>圖上沒有任何記號</b>能分辨哪條 edge 是 AST 解析的、哪條是 LLM 猜的。
+        </td>
+        <td>
+          <b>從 AST 做型別推導。</b><code>userService</code> 宣告成什麼 class，
+          就去那個 class 的 AST 找同名 method。<br><br>
+          <b>型別推導不出來、或同名 method 有好幾個 → 直接不建 edge。</b><br><br>
+          每條 edge 都標了信心等級：<span class="chip det">確定</span> <span class="chip heur">推測</span>，<b>你可以自己過濾</b>。
+        </td>
+        <td>
+          同樣從 AST 做型別推導，<b>但多處理了 AST 看不到的「動態」情況</b>：<br>
+          介面 → 實作、callback 註冊、發訊息 → 收訊息、打 HTTP → 對應的 API。<br><br>
+          這些 edge 會標成<span class="chip heur">推測</span>並記下「在哪一行接起來的」。<br><br>
+          <b>Spring 專案最需要的就是這一類。</b>共 13 種 edge 分開記錄。
+        </td>
+      </tr>
+
+      <tr>
+        <th>4 · 有沒有用 AI</th>
+        <td class="shared none">—</td>
+        <td><b>有，三個地方</b>：<br>① 每個 node 的說明文字<br>② <b>calls edge 本身</b><br>③ edge 的方向<br><br><b>三者都沒有標記</b>，事後分不出來源</td>
+        <td><b>沒有。</b>node 和 edge 全部從 AST 產生<br><br>（只有「幫模組取名字」這個附加功能可選用 LLM）</td>
+        <td><b>沒有。</b>node 和 edge 全部從 AST 產生</td>
+      </tr>
+
+      <tr>
+        <th>5 · 存成什麼</th>
+        <td class="shared none">—</td>
+        <td>一個 JSON 檔<span class="src">格式排版過，一個欄位一行</span></td>
+        <td>一個 JSON 檔<span class="src">networkx 標準格式</span></td>
+        <td><b>SQLite 資料庫</b><span class="src">可以直接下 SQL 查</span></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p class="sec-intro" style="margin:22px 0 0">
+    <b>一句話</b>：三套的 <b>node 都是 AST 抓的</b>，這部分沒有差別。
+    差別全在 <b>calls edge</b> —— <b>UA 是 LLM 猜的，另外兩套是從 AST 推導出來的</b>，
+    而推導的那兩套<b>都會標出哪些沒把握</b>。
+  </p>
+</section>
+
+<!-- ══════════ edge 深入 ══════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">02</span>
+    <h2>為什麼 edge 這麼難建</h2>
+  </div>
+  <p class="sec-intro">
+    上一節說「差別全在 calls edge」。這一節說明<b>為什麼那條 edge 這麼難</b>，
+    以及三套各自走到哪一步就停了。理解這一節，才能判斷一張圖上「查不到」到底代表什麼。
+  </p>
+
+  <h3 class="sub">建一條 calls edge，其實要走三段</h3>
+  <p class="sec-intro" style="margin-bottom:16px">
+    看到 <code>someVar.findById(id)</code> 這一行，工具要回答的不是一個問題，是三個：
+  </p>
+
+  <div class="steps">
+    <div>
+      <span class="stepno">①</span>
+      <p class="stept">推出型別</p>
+      <p><code>someVar</code> 是什麼型別？<br>要查這個變數的宣告 —— 可能在參數、在欄位、在上面幾行的區域變數。</p>
+      <p class="stepout">→ <code>UserRepository</code></p>
+    </div>
+    <div>
+      <span class="stepno">②</span>
+      <p class="stept">型別找到 class node</p>
+      <p>專案裡叫 <code>UserRepository</code> 的 class 是哪一個？<br><b>同名的可能不只一個</b>（不同 package）。</p>
+      <p class="stepout">→ 唯一的那個 class node</p>
+    </div>
+    <div>
+      <span class="stepno">③</span>
+      <p class="stept">class 找到 method node</p>
+      <p>那個 class 裡叫 <code>findById</code> 的 method 是哪一個？<br><b>overload 的話會有好幾個</b>。</p>
+      <p class="stepout">→ 建立 calls edge ✓</p>
+    </div>
+  </div>
+
+  <p class="sec-intro" style="margin:20px 0 0">
+    <b>三段每一段都可能斷。</b>graphify 的原始碼裡就有兩道明確的放棄閘門，
+    分別卡在第 ② 段（型別名對到多個 class）和第 ③ 段（overload）——
+    <b>遇到就直接不建這條 edge</b>。
+  </p>
+
+  <h3 class="sub">三套各走到第幾步</h3>
+
+  <div class="ladder">
+    <div class="ua">
+      <p class="lvl">推 0 步</p>
+      <h4>Understand-Anything</h4>
+      <p><b>三段全部跳過</b>，直接問 LLM 最終答案。<br>省掉的不只是型別推導，是整條驗證鏈。</p>
+    </div>
+    <div class="gf">
+      <p class="lvl">推 1 步</p>
+      <h4>graphify</h4>
+      <p>變數 → 它的<b>宣告型別</b>。<br>走完三段就停，推不動就不建 edge。</p>
+    </div>
+    <div class="cg">
+      <p class="lvl">推 2 步</p>
+      <h4>codegraph</h4>
+      <p>同樣走三段，<b>但如果型別是介面，會再走一步找實作</b>。<br>Spring 的 <code>@Autowired</code> 全靠這一步。</p>
+    </div>
+  </div>
+
+  <h3 class="sub">推導會在哪裡斷</h3>
+  <p class="sec-intro" style="margin-bottom:16px">
+    以下六種，前兩種最常見。第 ③④ 種<b>三套都沒做</b> —— 是共同的天花板。
+  </p>
+
+  <div class="scroller">
+  <table>
+    <thead>
+      <tr><th style="width:130px">情況</th><th>Java 例子</th><th>為什麼斷</th><th style="width:190px">誰過得了</th></tr>
+    </thead>
+    <tbody>
+      <tr class="pivot">
+        <th>① 宣告成介面</th>
+        <td><code>@Autowired<br>private UserService userService;<br>userService.findById(id);</code></td>
+        <td>型別<b>推導成功了</b>，推到 <code>UserService</code>。但那是介面，<code>findById</code> 只有簽章沒有實作內容。</td>
+        <td><b>只有 codegraph</b> 會再走一步找實作類別。graphify 停在介面。<br><br><b>Spring 專案幾乎全中這一類。</b></td>
+      </tr>
+      <tr>
+        <th>② overload</th>
+        <td><code>findById(Long id)<br>findById(String code)</code></td>
+        <td>要選對得比對<b>參數型別</b>。</td>
+        <td>graphify 直接放棄不建 edge</td>
+      </tr>
+      <tr>
+        <th>③ 泛型取值</th>
+        <td><code>List&lt;User&gt; users;<br>users.get(0).getName();</code></td>
+        <td>讀 <code>List&lt;User&gt;</code> 時<b>只取得到基底型別 <code>List</code></b>，拿不到裡面的 <code>User</code>。（已查證程式碼）</td>
+        <td><b>三套都沒做泛型代換</b></td>
+      </tr>
+      <tr>
+        <th>④ 回傳值串接</th>
+        <td><code>getRepository().findById(id);</code></td>
+        <td>型別表只記「<b>變數 → 型別</b>」，<b>沒有記「method → 回傳型別」</b>，所以 <code>getRepository()</code> 推不出來。</td>
+        <td><b>三套都沒做</b></td>
+      </tr>
+      <tr>
+        <th>⑤ 型別不在索引裡</th>
+        <td>第三方 jar、JDK 的 class</td>
+        <td>看不到它們的原始碼，找不到對應的 node。</td>
+        <td>都不行（設計如此，不是缺陷）</td>
+      </tr>
+      <tr>
+        <th>⑥ 反射</th>
+        <td><code>Class.forName(name)</code></td>
+        <td>執行期才決定，靜態分析理論上就不可能。</td>
+        <td>都不行</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3 class="sub">不是每種 edge 都需要型別推導</h3>
+  <p class="sec-intro" style="margin-bottom:16px">
+    這是常見的誤解。大多數 edge 的目標<b>字面就寫在那一行</b>，不用推。
+    但「寫在那裡」不代表「知道它指向哪一個 node」—— <b>名字是會撞的</b>。
+  </p>
+
+  <div class="scroller">
+  <table>
+    <thead>
+      <tr><th style="width:150px">目標端怎麼來</th><th style="width:260px">哪些 edge</th><th>風險</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th><span class="chip det">讀出來</span>結構</th>
+        <td><code>contains</code></td>
+        <td>file 裡有 class、class 裡有 method —— 就是 AST 的巢狀結構。<b>零風險。</b></td>
+      </tr>
+      <tr>
+        <th><span class="chip det">讀出來</span>名字寫在那裡</th>
+        <td><code>imports</code> <code>extends</code> <code>implements</code> <code>instantiates</code> <code>decorates</code></td>
+        <td>
+          <code>extends BaseEntity</code>、<code>new UserDTO()</code> —— 型別名是字面寫著的，<b>不用推</b>。<br><br>
+          ⚠ 但專案裡可能有三個 <code>BaseEntity</code>（在不同 package），
+          <b>要選對得靠檔案頂端的 import 敘述</b>。這叫 import 綁定，同樣是一道會斷的關卡。
+        </td>
+      </tr>
+      <tr class="pivot">
+        <th><span class="chip heur">推出來</span></th>
+        <td><code>calls</code>（<code>x.foo()</code> 這一類）</td>
+        <td>要走完前面那三段。<b>Java 幾乎所有呼叫都屬於這一類</b> —— 所以型別推導的品質，基本上就決定了 Java 專案圖的品質。</td>
+      </tr>
+      <tr>
+        <th><span class="chip llm">猜出來</span></th>
+        <td>裸名字比對、LLM 推測</td>
+        <td><b>永遠有答案，而且不會告訴你答錯了。</b></td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="trap">
+    <h4>graphify 明確拒絕「猜出來」那一格</h4>
+    <p>它的原始碼註解寫著：缺少或模糊的接收者型別會被<b>跳過，而不是退回裸方法名比對</b>。</p>
+    <p>
+      另一處在講為什麼要阻擋跨語言比對：「沒有這個，Java 的 <code>Greeter</code> 會
+      <b>很開心地綁到另一個 repo 的同名 Python 類別</b>。」
+    </p>
+    <p>「很開心地」這個用詞很傳神 —— <b>純名字比對永遠找得到東西，這正是它危險的地方。</b></p>
+  </div>
+
+  <h3 class="sub">回頭看 UA：為什麼會變成這樣</h3>
+  <p class="sec-intro" style="margin-bottom:16px">
+    UA 不是偷懶。它的 calls edge 之所以交給 LLM，是一個<b>架構決定的連鎖結果</b>：
+  </p>
+
+  <div class="chain">
+    <div><span class="cn">1</span><p>決定<b>讓 LLM 逐檔分析</b></p></div>
+    <div><span class="cn">2</span><p>每次<b>只看得到一個檔案</b></p></div>
+    <div><span class="cn">3</span><p>解析器抓呼叫的資料結構就設計成逐檔的 —— <b>只有「誰呼叫誰」和行號，沒有欄位記「對方在哪個檔案」</b></p></div>
+    <div><span class="cn">4</span><p><b>跨檔案的呼叫沒地方存</b></p></div>
+    <div><span class="cn">5</span><p>只好在 edge 規格裡寫：「<i>這個檔案裡的函式呼叫了另一個檔案的函式 —— 從 import 和函式名稱<b>推測</b></i>」</p></div>
+    <div class="last"><span class="cn">!</span><p>原始碼裡<b>有一個建立跨檔案 calls edge 的函式，簽章完全正確</b>（四個參數：來源檔、來源函式、目標檔、目標函式）——<b>但全專案沒有任何一處呼叫它</b></p></div>
+  </div>
+
+  <p class="sec-intro" style="margin:22px 0 0">
+    <b>所以根因是「逐檔分析」這個架構決定</b>，型別推導只是被連帶犧牲的東西。<br><br>
+    這也解釋了一個看似矛盾的現象：<b>UA 的 import edge 反而做得特別紮實</b>（有一支 2000 多行的專用程式處理路徑別名、套件設定檔）——
+    因為那支程式是<b>全域跑一次</b>的，不受逐檔限制。
+    <b>同一個專案裡，不受架構限制的部分做得很好，受限制的部分就整段外包給 LLM。</b>
+  </p>
+
+  <div class="trap" style="border-left-color:var(--heur)">
+    <h4 style="color:var(--heur)">順帶一個陷阱：weight 不是 confidence</h4>
+    <p>UA 的 edge 規格表給每種 edge 一個固定的 weight：</p>
+    <pre class="ex">imports  → 0.7    ← 來自確定性的 import map，最可信
+calls    → 0.8    ← LLM 推測，最不可信</pre>
+    <p>
+      <b>最可信的 edge 權重反而最低。</b>因為 weight 是「這種 edge 類型的固定分數」，
+      跟「這一條是不是真的」完全無關。
+    </p>
+    <p>
+      如果有人想用 weight 過濾可信度，會<b>剛好篩掉最可靠的、留下最可疑的</b>。
+      這是個很具體的例子：<b>圖上有數字，不代表那個數字有意義。</b>
+    </p>
+  </div>
+</section>
+
+<!-- ══════════ 2 ══════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">03</span>
+    <h2>怎麼用圖</h2>
+  </div>
+  <p class="sec-intro">
+    圖建好之後，AI 助理要怎麼查？
+    <b>第 2 列是這張表的樞紐</b> —— UA 根本沒有查詢工具，
+    它給的是一份「操作說明」，實際動手的是 AI 自己的搜尋指令。
+    所以第 3 列之後 UA 沒東西可填。
+  </p>
+
+  <div class="scroller">
+  <table class="wide5">
+    <thead>
+      <tr>
+        <th>比較項目</th>
+        <th class="t-shared">三者共通</th>
+        <th class="t-ua">Understand-Anything</th>
+        <th class="t-gf">graphify</th>
+        <th class="t-cg">codegraph</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>1 · 有沒有使用說明</th>
+        <td class="shared"><b>三者都有</b>，都附了給 AI 助理看的操作說明文件。</td>
+        <td>一份 70 行的說明</td>
+        <td>說明裡有 300 多行<b>專門在教「關鍵字要怎麼下」</b></td>
+        <td>說明會<b>自動塞進 AI 的記憶</b>，AI 想不看都不行</td>
+      </tr>
+
+      <tr class="pivot">
+        <th>2 · 有沒有內建查詢工具</th>
+        <td class="shared none">—</td>
+        <td>
+          <span class="no">沒有</span><br>
+          建圖有 12 支程式，<b>查圖一支都沒有</b>。<br><br>
+          說明文件教 AI 這樣做：<br>
+          ① 用搜尋指令在 JSON 裡找關鍵字<br>
+          ② 把找到的 ID 再搜一次，撈出相連的東西<br><br>
+          <b>執行的是 AI 自己的工具，不是 UA 的程式。</b>
+        </td>
+        <td>
+          <span class="yes">有</span><br>
+          10 個查詢工具 + 28 個指令<br><br>
+          <b>主要入口：<code>query_graph</code></b><br><br>
+          其他 9 個都要你<b>已經知道名字</b>才能用
+        </td>
+        <td>
+          <span class="yes">有</span><br>
+          8 個查詢工具 + 網頁介面<br><br>
+          <b>主要入口：<code>codegraph_explore</code></b><br><br>
+          說明裡直接寫「<b>只有這一個工具</b>」
+        </td>
+      </tr>
+
+      <tr>
+        <th>3 · 查的時候要給什麼</th>
+        <td class="shared none">—</td>
+        <td class="na">—<span class="nanote">無工具，見上列</span></td>
+        <td>一句問題或關鍵字<br>＋ 要找幾層（1–6）<br>＋ 回傳長度上限<br>＋ <b>只走哪幾種 edge</b>（例如只走 calls）</td>
+        <td>一句問題、或直接丟幾個名字、<b>或丟檔案路徑</b><br>＋ 要幾個檔案（1–20）</td>
+      </tr>
+
+      <tr>
+        <th>4 · 怎麼找到起始 node</th>
+        <td class="shared">
+          <b>三套都是關鍵字比對，沒有任何一套用語意搜尋。</b><br><br>
+          意思是：<b>你的關鍵字要跟程式碼裡的英文名稱對得上</b>。
+          用中文業務術語查，三套都會落空。
+        </td>
+        <td class="na">—<span class="nanote">由 agent 自己下搜尋條件</span></td>
+        <td>拆詞較單純。<br><br>⚠ 有個副作用：<b>問題裡的詞越多，起始 node 就越多</b>，容易發散</td>
+        <td>拆詞最細（會拆 <code>OrderStateMachine</code> → order / state / machine），所以<b>模糊一點的問法也命中得到</b></td>
+      </tr>
+
+      <tr class="pivot">
+        <th>5 · 從起始 node 怎麼擴散</th>
+        <td class="shared">
+          <b>走 edge 時不分方向</b>：不管「誰呼叫它」還是「它呼叫誰」都算相關。<br><br>
+          三套都這樣做，因為只往下走的話，<b>最底層的 method 會查出空的</b>。
+          edge 的方向要到「講答案」的時候才恢復。
+        </td>
+        <td class="na">—<span class="nanote">只看直接相連的 1 層 node，不排序</span></td>
+        <td>
+          沿著 edge 往外走 3 層。<br><br>
+          <b>共用 node 的處理</b>：碰到「被 50 個以上地方連到」的 node 就<b>停住不再往外走</b>。<br><br>
+          ⚠ <b>但這道防線有漏洞</b> —— 如果那個共用 node 剛好被選成起始 node，它就不受限制，<b>結果會爆量</b>
+        </td>
+        <td>
+          沿著 edge 往外走 3 層，另外<b>特別補上繼承關係和中間的橋接 node</b>。<br><br>
+          <b>共用 node 的處理</b>：用數學方式稀釋 —— 一個連到 300 個 node 的元件，<b>分給每個鄰居的相關度只有 1/300</b>，自然就沉下去了。<br><br>
+          排序看的是 <b>edge 上的實際呼叫關係</b>，不是名字像不像
+        </td>
+      </tr>
+
+      <tr class="pivot">
+        <th>6 · 最後回傳什麼</th>
+        <td class="shared none">—</td>
+        <td class="na">—<span class="nanote">搜尋指令找到的那幾行 JSON。因為排版關係，還要再讀一次檔案才拿得到上下文</span></td>
+        <td>
+          <b>一份 node 清單</b>：有哪些 node、在哪個檔案第幾行。<br><br>
+          <b>沒有原始碼。</b><br><br>
+          → AI 還要<b>自己去讀檔案</b>
+        </td>
+        <td>
+          <b>一份報告</b>：<br>
+          ① 呼叫鏈（A → B → C）<br>
+          ② 影響範圍（誰依賴它、有沒有測試）<br>
+          ③ <b>最多 8 個檔案的原始碼，逐字帶行號</b><br>
+          ④ 沒給你的檔案清單<br><br>
+          → AI <b>直接回答</b>
+        </td>
+      </tr>
+
+      <tr>
+        <th>7 · 可以調什麼</th>
+        <td class="shared none">—</td>
+        <td class="na">—<span class="nanote">AI 自訂搜尋條件，自由度最高但沒有護欄</span></td>
+        <td>
+          層數、回傳長度、<b>只走哪幾種 edge</b><br><br>
+          <b>「只走 calls edge」是 codegraph 做不到的</b>
+        </td>
+        <td>
+          <b>只有「回傳幾個檔案」。</b><br><br>
+          排除某個目錄、只走某種 edge、改層數 —— <b>全部做不到</b>，只能換個問法重試
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<!-- ══════════ 坑 ══════════ -->
+<section>
+  <div class="sec-head">
+    <span class="sec-num">04</span>
+    <h2>三個實際踩到的坑</h2>
+  </div>
+  <p class="sec-intro">
+    這三個都是實際操作驗證過的，不是理論推測。分享時值得提，因為它們說明一件事：
+    <b>全自動建出來的圖，有些缺失是看不出來的。</b>
+  </p>
+
+  <div class="trap">
+    <h4>坑 1 — 圖上查不到，不代表真的沒有</h4>
+    <p>
+      我拿一份典型的 Oracle DDL 測 graphify：三張表都建出來了，
+      <b>但外鍵一條都沒有</b>。
+    </p>
+    <p>
+      原因不是資料庫沒有外鍵，而是<b>解析器看不懂 <code>VARCHAR2</code> 和 <code>NUMBER(10,0)</code></b>
+      這些 Oracle 專有寫法，整個欄位區塊解析失敗，寫在裡面的外鍵一起消失。
+    </p>
+    <p>
+      <b>最麻煩的是它不會報錯</b> —— 表的數量完全正常，你不會知道少了什麼。
+      （已寫好前處理腳本可修正。）
+    </p>
+  </div>
+
+  <div class="trap">
+    <h4>坑 2 — 「找不到路徑」可能只是方向記反了</h4>
+    <p>
+      graphify 查兩點之間的路徑時，<b>預設只往一個方向找</b>。找不到會回「沒有路徑」。
+    </p>
+    <p>
+      但依賴注入、callback 註冊這類關係，<b>該記哪個方向本來就是模糊地帶</b>。
+      工具記反一條，查詢就直接說「沒有」。
+    </p>
+    <p><b>實務規則：查不到時先換成「不分方向」再試一次，才能下結論。</b></p>
+  </div>
+
+  <div class="trap">
+    <h4>坑 3 — 查詢結果沒有先後順序</h4>
+    <p>
+      查出來的那串 node，<b>只代表「這些跟你問的有關」，不代表執行順序</b>。
+      「A 和 B 相關」不等於「A 呼叫 B」。
+    </p>
+    <p>
+      要順序得另外查：graphify 用「最短路徑」功能，codegraph 看報告開頭的呼叫鏈。
+      <b>別讓 agent 從 node 清單自行推論流程。</b>
+    </p>
+  </div>
+</section>
+
+<!-- ══════════ verdict ══════════ -->
+<div class="verdict">
+  <div class="sec-head"><h2>結論</h2></div>
+
+  <div class="verdict-grid">
+    <div class="ua">
+      <h4>Understand-Anything</h4>
+      <p class="lead">node 是 AST 的，edge 是 LLM 的。</p>
+      <p>適合「快速認識一個沒碰過的 repo」。<b>不適合任何需要「不會漏」的場合</b> —— 因為 calls edge 是 LLM 猜的，而且你分不出哪些是。</p>
+    </div>
+    <div class="gf">
+      <h4>graphify</h4>
+      <p class="lead">寧可漏，也不亂連。</p>
+      <p>唯一有信心分級的。適合<b>看架構全貌</b>（有模組分群、核心元件排行、PR 影響分析）。代價是 agent 拿到 node 清單後還要自己讀程式碼。</p>
+    </div>
+    <div class="cg">
+      <h4>codegraph</h4>
+      <p class="lead">直接把答案和原始碼一起給你。</p>
+      <p>適合<b>追一條具體的鏈路</b>、問「改這裡會影響誰」。省來回、答得準，代價是<b>幾乎沒有旋鈕可以調</b>。</p>
+    </div>
+  </div>
+
+  <div class="axis">
+    <h3>真正的差別：把多少判斷交給 AI</h3>
+    <p>
+      三套的差別不在「誰的圖比較準」，而在<b>把哪些判斷交給 AI</b>。
+      交得越多，彈性越大、但錯了越沒有痕跡；交得越少，答案越穩、但你越無法客製。
+    </p>
+    <div class="rail">
+      <div class="rail-line"></div>
+      <div class="rail-labels">
+        <span>codegraph</span>
+        <span>graphify</span>
+        <span>Understand-Anything</span>
+      </div>
+      <div class="rail-ends">
+        <span>工具說了算：兩個參數，回傳成品</span>
+        <span>AI 說了算：自訂搜尋，自行推論</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="trap" style="border-left-color:var(--heur);margin-top:34px">
+    <h4 style="color:var(--heur)">給決策者的一句話</h4>
+    <p>
+      本文描述的是三套工具的<b>設計與實作</b>，不是它們在我們 codebase 上的實測覆蓋率。
+    </p>
+    <p>
+      要談覆蓋率，需要另外做抽樣驗證 —— <b>而且一定要做</b>。
+      坑 1 就是最好的例子：一份看起來完整、實際缺了一整類關係的圖，
+      光看數字是看不出來的。
+    </p>
+  </div>
+</div>
+
+<footer>
+  <b>查證方式</b> — 本文每一項結論都對照過三套工具的原始碼；
+  Oracle DDL 的部分是實際安裝解析器跑過真實語法後的結果。<br>
+  需要檔案行號層級的佐證，可另外索取技術版。
+</footer>
+
+</div>
+
+</body>
+</html>

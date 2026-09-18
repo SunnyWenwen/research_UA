@@ -1,0 +1,394 @@
+<title>三種查詢架構</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ink: #1A1D21;
+    --ink-2: #4E555D;
+    --ink-3: #858D96;
+    --ground: #F4F5F3;
+    --surface: #FFFFFF;
+    --surface-2: #FAFAF8;
+    --line: #DEE0DC;
+    --line-soft: #EAEBE8;
+
+    --ua: #A6543C;
+    --ua-soft: #F5E9E4;
+    --gfy: #37598C;
+    --gfy-soft: #E6EBF3;
+    --cg: #2C6B50;
+    --cg-soft: #E3EFE8;
+
+    --sans: "Archivo", ui-sans-serif, system-ui, "Noto Sans TC", sans-serif;
+    --serif: "Newsreader", "Noto Serif TC", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #E9ECEA;
+      --ink-2: #A6AEB3;
+      --ink-3: #737C83;
+      --ground: #131614;
+      --surface: #1B1F1D;
+      --surface-2: #212623;
+      --line: #2F3633;
+      --line-soft: #262B28;
+      --ua: #D98E74;
+      --ua-soft: #33211B;
+      --gfy: #7FA3D6;
+      --gfy-soft: #1A2331;
+      --cg: #6FBE95;
+      --cg-soft: #162B20;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #E9ECEA; --ink-2: #A6AEB3; --ink-3: #737C83;
+    --ground: #131614; --surface: #1B1F1D; --surface-2: #212623;
+    --line: #2F3633; --line-soft: #262B28;
+    --ua: #D98E74; --ua-soft: #33211B;
+    --gfy: #7FA3D6; --gfy-soft: #1A2331;
+    --cg: #6FBE95; --cg-soft: #162B20;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--ground); color: var(--ink);
+    font-family: var(--serif); font-size: 16.5px; line-height: 1.7;
+    margin: 0; padding-block: 0 80px; padding-inline: 20px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 940px; margin: 0 auto; }
+  .narrow { max-width: 680px; }
+
+  header { padding-block: 60px 32px; margin-bottom: 44px; border-bottom: 1px solid var(--line); }
+  .kicker {
+    font-family: var(--sans); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3);
+    margin: 0 0 16px;
+  }
+  h1 {
+    font-family: var(--sans); font-weight: 600;
+    font-size: clamp(32px, 6vw, 48px); line-height: 1.08; letter-spacing: -0.025em;
+    margin: 0 0 18px; text-wrap: balance;
+  }
+  .lede { font-size: 18.5px; color: var(--ink-2); margin: 0; max-width: 60ch; }
+  .meta {
+    font-family: var(--sans); font-size: 12px; color: var(--ink-3);
+    margin: 26px 0 0; line-height: 1.6;
+  }
+
+  h2 {
+    font-family: var(--sans); font-weight: 600; font-size: 24px;
+    letter-spacing: -0.015em; margin: 0 0 10px;
+  }
+  h3 {
+    font-family: var(--sans); font-weight: 600; font-size: 16px;
+    margin: 0 0 10px;
+  }
+  section { margin-bottom: 60px; }
+  .intro { color: var(--ink-2); margin: 0 0 28px; max-width: 64ch; }
+
+  /* ── thesis ── */
+  .thesis { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); margin-bottom: 60px; }
+  @media (min-width: 720px) { .thesis { grid-template-columns: repeat(3, 1fr); } }
+  .th { background: var(--surface); padding: 22px 22px 24px; }
+  .th-name { font-family: var(--sans); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; margin: 0 0 12px; }
+  .th-line { font-family: var(--sans); font-size: 17px; font-weight: 500; line-height: 1.34; margin: 0 0 10px; letter-spacing: -0.01em; }
+  .th p { margin: 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.6; }
+  .th-ua .th-name { color: var(--ua); }
+  .th-gfy .th-name { color: var(--gfy); }
+  .th-cg .th-name { color: var(--cg); }
+
+  /* ── pipelines ── */
+  .pipes { display: grid; gap: 22px; }
+  @media (min-width: 780px) { .pipes { grid-template-columns: repeat(3, 1fr); } }
+  .pipe { border: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; }
+  .pipe-head { padding: 16px 18px 14px; border-bottom: 1px solid var(--line-soft); }
+  .pipe-title { font-family: var(--sans); font-weight: 600; font-size: 15px; margin: 0 0 4px; }
+  .pipe-sub { font-family: var(--mono); font-size: 11px; color: var(--ink-3); margin: 0; }
+  .steps { list-style: none; margin: 0; padding: 14px 18px 18px; display: grid; gap: 0; }
+  .steps li {
+    font-family: var(--sans); font-size: 13.5px; line-height: 1.45;
+    padding: 9px 0 9px 20px; position: relative; color: var(--ink-2);
+    border-left: 2px solid var(--line);
+  }
+  .steps li::before {
+    content: ""; position: absolute; left: -5px; top: 15px;
+    width: 8px; height: 8px; border-radius: 50%; background: var(--line);
+  }
+  .steps li b { font-weight: 600; color: var(--ink); }
+  .steps li.key { color: var(--ink); }
+  .pipe-ua .steps li.key { border-left-color: var(--ua); }
+  .pipe-ua .steps li.key::before { background: var(--ua); }
+  .pipe-gfy .steps li.key { border-left-color: var(--gfy); }
+  .pipe-gfy .steps li.key::before { background: var(--gfy); }
+  .pipe-cg .steps li.key { border-left-color: var(--cg); }
+  .pipe-cg .steps li.key::before { background: var(--cg); }
+  .pipe-foot {
+    margin-top: auto; padding: 13px 18px; border-top: 1px solid var(--line-soft);
+    font-family: var(--sans); font-size: 12px; color: var(--ink-3);
+  }
+  .pipe-foot b { color: var(--ink-2); font-weight: 600; }
+
+  /* ── table ── */
+  .tw { overflow-x: auto; border: 1px solid var(--line); background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 700px; font-family: var(--sans); font-size: 13.5px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line-soft); vertical-align: top; line-height: 1.5; }
+  thead th { font-weight: 600; font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); background: var(--surface-2); white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  td:first-child { font-weight: 500; color: var(--ink); white-space: nowrap; }
+  .c-ua { color: var(--ua); } .c-gfy { color: var(--gfy); } .c-cg { color: var(--cg); }
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); padding: 1px 5px; border: 1px solid var(--line-soft); }
+
+  /* ── analysis blocks ── */
+  .point { border-top: 2px solid var(--ink); padding-top: 18px; margin-top: 32px; }
+  .point:first-of-type { margin-top: 0; }
+  .point p { margin: 0 0 12px; max-width: 66ch; }
+  .point p:last-child { margin-bottom: 0; }
+  blockquote {
+    margin: 16px 0; padding: 0 0 0 18px; border-left: 2px solid var(--line);
+    font-size: 15px; color: var(--ink-2); font-style: italic;
+  }
+  blockquote b { font-style: normal; color: var(--ink); }
+
+  /* ── verdict ── */
+  .verdicts { display: grid; gap: 14px; }
+  .v { display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: start;
+       border: 1px solid var(--line); background: var(--surface); padding: 18px 20px; }
+  .v-tag {
+    font-family: var(--sans); font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+    padding: 4px 9px; white-space: nowrap; margin-top: 2px;
+  }
+  .t-ua { background: var(--ua-soft); color: var(--ua); }
+  .t-gfy { background: var(--gfy-soft); color: var(--gfy); }
+  .t-cg { background: var(--cg-soft); color: var(--cg); }
+  .v p { margin: 0; font-size: 15px; }
+  .v p b { font-family: var(--sans); font-weight: 600; }
+
+  footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--line);
+           font-family: var(--sans); font-size: 12.5px; color: var(--ink-3); }
+  footer p { margin: 0 0 8px; max-width: 70ch; }
+
+  @media (max-width: 560px) {
+    .v { grid-template-columns: 1fr; gap: 8px; }
+    .v-tag { justify-self: start; }
+  }
+</style>
+
+<div class="wrap">
+
+<header>
+  <p class="kicker">程式碼知識圖 · 查詢階段架構分析</p>
+  <h1>三種查詢架構</h1>
+  <p class="lede">圖建好之後才是真正的分歧點。Understand-Anything、Graphify、CodeGraph 對「agent 該怎麼用這張圖」給了三個互不相容的答案。</p>
+  <p class="meta">內容依據三個專案的原始碼實際查證:UA 的 <code>skills/understand-chat/SKILL.md</code>、Graphify 的 <code>references/query.md</code> 與 <code>serve.py</code>、CodeGraph 的 <code>src/mcp/server-instructions.ts</code> 與 <code>src/installer/targets/opencode.ts</code>。</p>
+</header>
+
+<div class="thesis">
+  <div class="th th-ua">
+    <p class="th-name">UNDERSTAND-ANYTHING</p>
+    <p class="th-line">LLM 是遍歷器</p>
+    <p>不提供查詢引擎。skill 教 agent 用自己的 grep 工具去掃 JSON 檔,關係由 LLM 自己拼。</p>
+  </div>
+  <div class="th th-gfy">
+    <p class="th-name">GRAPHIFY</p>
+    <p class="th-line">程式遍歷,LLM 組答案</p>
+    <p>CLI 跑 BFS/DFS 回傳子圖,LLM 負責解讀與敘述。查詢前強制做詞彙擴展。</p>
+  </div>
+  <div class="th th-cg">
+    <p class="th-name">CODEGRAPH</p>
+    <p class="th-line">程式做完,一次給完</p>
+    <p>單一 MCP 工具,一次回傳逐字原始碼 + 呼叫路徑 + 影響範圍。明令 agent 不要再驗證。</p>
+  </div>
+</div>
+
+<section>
+  <h2>查詢管線</h2>
+  <p class="intro">同一個問題「這個 Controller 怎麼走到 Repository」,三者走完全不同的路徑。標色的步驟是各自架構的關鍵動作。</p>
+
+  <div class="pipes">
+
+    <div class="pipe pipe-ua">
+      <div class="pipe-head">
+        <p class="pipe-title">Understand-Anything</p>
+        <p class="pipe-sub">.ua/knowledge-graph.json</p>
+      </div>
+      <ol class="steps">
+        <li>解析資料目錄 <code>$UA_DIR</code></li>
+        <li class="key"><b>檢查新鮮度</b> — 比對圖的 git commit 與 HEAD、staged、working tree、未追蹤檔</li>
+        <li>Grep <code>"project"</code> 區段取專案資訊</li>
+        <li class="key"><b>Grep 節點</b> — 掃 name / summary / tags 欄位,記下命中的 node id</li>
+        <li class="key"><b>Grep 邊</b> — 拿那些 id 再掃一次 edges 區段</li>
+        <li>Grep <code>"layers"</code> 取架構分層</li>
+        <li>LLM 依手上的片段組出答案</li>
+      </ol>
+      <div class="pipe-foot"><b>深度上限:1-hop。</b>skill 原文:「This gives you the 1-hop subgraph」,沒有第二輪。</div>
+    </div>
+
+    <div class="pipe pipe-gfy">
+      <div class="pipe-head">
+        <p class="pipe-title">Graphify</p>
+        <p class="pipe-sub">graphify-out/graph.json</p>
+      </div>
+      <ol class="steps">
+        <li>確認 <code>graph.json</code> 存在</li>
+        <li class="key"><b>詞彙擴展(強制)</b> — 抽出圖上所有節點標籤的 token,跟使用者的用詞比對,組出真正能命中的查詢字串</li>
+        <li class="key"><b>執行遍歷</b> — <code>graphify query "擴展後的字串"</code>,BFS 或 DFS</li>
+        <li>CLI 不可用時,改用 NetworkX 在記憶體裡跑同樣的遍歷</li>
+        <li>依 token budget 排序截斷</li>
+        <li>LLM 依子圖組出答案,引用 source_location</li>
+      </ol>
+      <div class="pipe-foot"><b>深度可調。</b>另有 <code>path</code>(最短路徑)與 <code>explain</code>(單節點)兩個獨立指令。</div>
+    </div>
+
+    <div class="pipe pipe-cg">
+      <div class="pipe-head">
+        <p class="pipe-title">CodeGraph</p>
+        <p class="pipe-sub">.codegraph/codegraph.db</p>
+      </div>
+      <ol class="steps">
+        <li>OpenCode 啟動時 spawn <code>codegraph serve --mcp</code></li>
+        <li class="key"><b>指南自動注入</b> — MCP <code>initialize</code> 回應夾帶操作說明,直接進 system prompt</li>
+        <li class="key"><b>單次工具呼叫</b> — <code>codegraph_explore("問題或符號名")</code></li>
+        <li>SQLite 查詢引擎解析,次毫秒回應</li>
+        <li class="key"><b>一次回傳三樣</b> — 逐字帶行號原始碼、符號間的呼叫路徑、影響範圍摘要</li>
+        <li>LLM 直接用,不再讀檔</li>
+      </ol>
+      <div class="pipe-foot"><b>回傳即 Read。</b>格式與 Read 工具相同,可直接拿去 Edit。</div>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <h2>機制對照</h2>
+  <div class="tw">
+    <table>
+      <thead>
+        <tr>
+          <th>面向</th>
+          <th class="c-ua">Understand-Anything</th>
+          <th class="c-gfy">Graphify</th>
+          <th class="c-cg">CodeGraph</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>呼叫方式</td>
+          <td>agent 自己的 Grep / Read 工具</td>
+          <td>skill 主導的 CLI;MCP 為選配</td>
+          <td>MCP stdio,單一工具</td>
+        </tr>
+        <tr>
+          <td>儲存格式</td>
+          <td>JSON(縮排 2,一欄位一行)</td>
+          <td>JSON(NetworkX node-link,上限 512 MiB)</td>
+          <td>SQLite + FTS5 全文索引</td>
+        </tr>
+        <tr>
+          <td>誰執行遍歷</td>
+          <td>LLM 靠兩次 grep 自己拼</td>
+          <td>CLI / NetworkX 演算法</td>
+          <td>SQLite 查詢引擎</td>
+        </tr>
+        <tr>
+          <td>遍歷深度</td>
+          <td>1-hop 硬限制</td>
+          <td>BFS / DFS 可調</td>
+          <td>路徑由引擎算完,含動態分派跳躍</td>
+        </tr>
+        <tr>
+          <td>工具數量</td>
+          <td>0(沒有工具,只有指示)</td>
+          <td>MCP 模式 10 個</td>
+          <td>1 個(其餘預設隱藏)</td>
+        </tr>
+        <tr>
+          <td>回傳內容</td>
+          <td>grep 命中的文字行</td>
+          <td>子圖(節點 + 邊 + 信心標籤)</td>
+          <td>逐字原始碼 + 路徑 + 影響範圍</td>
+        </tr>
+        <tr>
+          <td>Token 控制</td>
+          <td>prompt 約定「不要整份倒進去」</td>
+          <td><code>--budget N</code> 硬截斷</td>
+          <td>語意截斷 + 續傳,不切斷識別字</td>
+        </tr>
+        <tr>
+          <td>查詢前置</td>
+          <td>無</td>
+          <td>強制詞彙擴展</td>
+          <td>無(引擎自帶模糊比對)</td>
+        </tr>
+        <tr>
+          <td>新鮮度處理</td>
+          <td>查詢前比對 git 狀態,最完整</td>
+          <td>靠 git hook 或手動 update</td>
+          <td>file watcher 自動同步(約 1 秒延遲)</td>
+        </tr>
+        <tr>
+          <td>多專案</td>
+          <td>無</td>
+          <td>需另外合併圖</td>
+          <td><code>projectPath</code> 參數,往上找最近的索引</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="narrow">
+  <h2>三個關鍵分歧</h2>
+
+  <div class="point">
+    <h3>一、遍歷交給誰</h3>
+    <p>這是最根本的一條。UA 把遍歷交給 LLM —— 兩次 grep 之後,要不要再追一層、追哪裡,都是模型臨場判斷。好處是彈性,壞處是深度和完整性每次都不一樣,而且無法驗證。</p>
+    <p>Graphify 和 CodeGraph 都把遍歷交給程式。差別在 Graphify 回傳的是「子圖」,LLM 還要自己把節點和邊翻譯成人話;CodeGraph 直接回傳原始碼,LLM 只需要讀。</p>
+  </div>
+
+  <div class="point">
+    <h3>二、一個工具還是一組工具</h3>
+    <p>CodeGraph 只暴露 <code>codegraph_explore</code>,其他七個工具預設隱藏。原始碼的理由不是簡化,而是實測:</p>
+    <blockquote>Measured agent behavior showed that <b>one strong tool steers agents better than a menu of narrower ones</b> — fewer mis-picks, and it saves context every session.</blockquote>
+    <p>Graphify 的 MCP 模式走相反路線,給十個工具讓 agent 自己挑。兩種設計沒有絕對優劣:工具多,表達力上限高;工具少,agent 選錯的機會低。</p>
+  </div>
+
+  <div class="point">
+    <h3>三、agent 該不該再驗證</h3>
+    <p>CodeGraph 在注入的指南裡明確要求 <b>「Trust the results — don't re-verify with grep」</b>。這句話成立的前提是:它回傳的是逐字原始碼,不是摘要,所以沒有再驗證的必要。</p>
+    <p>UA 的情況相反且值得警惕 —— 它的節點帶著<b>另一個 LLM 在建圖時寫的 summary</b>。agent 看到那段摘要容易覺得「懂了」就直接回答,但那句話可能不準、可能過期,而且讀起來很權威。Graphify 和 CodeGraph 的節點只有 AST 抽出的識別字與行號,少一層轉述,也就少一層失真。</p>
+  </div>
+</section>
+
+<section class="narrow">
+  <h2>一個容易忽略的依賴</h2>
+  <p class="intro">UA 的查詢品質取決於<strong>你用的 agent 的 grep 工具長什麼樣</strong>,這點在選型時幾乎沒人算進去。</p>
+  <p>它的圖是縮排 2 的 JSON,一個欄位一行。所以 grep <code>"name": "getUser"</code> 只會命中那一行 —— <code>id</code>、<code>filePath</code>、<code>summary</code> 全在別的行。</p>
+  <p>OpenCode 的 grep 工具參數只有 pattern / path / include / limit,<strong>沒有任何取得上下文行的選項</strong>,底層 ripgrep 呼叫也不帶 <code>-A</code>/<code>-B</code>/<code>-C</code>。Claude Code 的 Grep 則有完整的上下文參數。</p>
+  <p>同一張 UA 圖,換一個 agent,能撈到的資訊量就不同。Graphify 和 CodeGraph 沒有這個問題 —— 它們回傳的是完整的結構化結果,不受宿主工具能力影響。</p>
+</section>
+
+<section class="narrow">
+  <h2>選型結論</h2>
+  <div class="verdicts">
+    <div class="v">
+      <span class="v-tag t-cg">日常查詢</span>
+      <p><b>CodeGraph。</b>回合數最少、token 最省、回傳即可編輯。單一工具的設計讓 agent 幾乎不會選錯路徑。代價是表達力被框死 —— 預設沒有自訂查詢的出口。</p>
+    </div>
+    <div class="v">
+      <span class="v-tag t-gfy">架構概觀</span>
+      <p><b>Graphify。</b><code>god_nodes</code>、<code>get_community</code>、<code>shortest_path</code> 這些高階原語適合「這個系統長怎樣」類的問題,社群分群也是它獨有的。查詢前的詞彙擴展對非英語使用者特別有價值。</p>
+    </div>
+    <div class="v">
+      <span class="v-tag t-ua">不建議作為查詢層</span>
+      <p><b>Understand-Anything。</b>1-hop 限制、依賴宿主 grep 能力、節點摘要由 LLM 生成 —— 三項疊加讓查詢結果難以預期。它的新鮮度檢查設計得最完整,那個機制值得其他工具借鑑。</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>三者的取捨可以用一句話收攏:<strong>把多少決策權留給模型</strong>。UA 留最多,CodeGraph 留最少,Graphify 在中間。決策權越少,結果越可預期;決策權越多,遇到預設路徑覆蓋不到的問題時越有轉圜餘地。</p>
+  <p>沒有一種配置對所有問題都最好,但對「每天問幾十次、答案要能直接拿去改程式碼」這種主流用途,可預期性的價值高過彈性。</p>
+</footer>
+
+</div>
