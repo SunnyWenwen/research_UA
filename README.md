@@ -90,15 +90,6 @@ print('FK:', len([e for e in r['edges'] if e['relation']=='references']))
 
 ---
 
-## 歸檔
-
-`docs/archive/` 下的兩份早期文件，內容已大半被主文件覆蓋，保留作為過程記錄：
-
-- `blindspots.html` —— 靜態分析的盲區
-- `query-arch.html` —— 三種查詢架構
-
----
-
 ## 重新產生網頁版
 
 `docs/kg-comparison.html` 由 `docs/src/kg-comparison.artifact.html` 產生
