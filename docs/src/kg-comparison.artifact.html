@@ -321,6 +321,24 @@ section > h3.sub:first-of-type{margin-top:34px}
 .chain p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.6}
 .chain > div.last p{color:var(--ink)}
 
+/* ── 三個等級 ───────────────────────────────── */
+.tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.tiers > div{border-top:3px solid;padding-top:13px}
+.tiers .t-ok{border-color:var(--det)}
+.tiers .t-mid{border-color:var(--heur)}
+.tiers .t-no{border-color:var(--llm)}
+.tiers .tlabel{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;
+  text-transform:uppercase;margin:0 0 5px;line-height:1.4;
+}
+.tiers .t-ok .tlabel{color:var(--det)}
+.tiers .t-mid .tlabel{color:var(--heur)}
+.tiers .t-no .tlabel{color:var(--llm)}
+.tiers h4{font-family:var(--mono);font-size:12.5px;font-weight:500;margin:0 0 9px;color:var(--ink);line-height:1.7}
+.tiers p{margin:0 0 9px;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.tiers p:last-child{margin-bottom:0}
+@media (max-width:760px){.tiers{grid-template-columns:1fr}}
+
 /* ── 缺口區塊 ───────────────────────────────── */
 .gap{
   border:1px solid var(--rule-strong);
@@ -574,7 +592,7 @@ footer b{color:var(--ink-2);font-weight:500}
           給 LLM 的指令原文：「<i>從 import 和函式名稱<b>推測</b>，有信心的話就寫下來</i>」。<br><br>
           它連資料結構都撐不住這件事：記錄呼叫的欄位<b>只有「誰呼叫誰」和行號，沒有欄位能記「對方在哪個檔案」</b> ——
           所以<b>跨檔案的呼叫它結構上就存不下來</b>。<br><br>
-          原始碼裡有一個建立跨檔案 calls edge 的函式，但<b>全專案沒有任何一處呼叫它</b>。<br><br>
+          node id 的格式規定是 <code>function:&lt;檔案路徑&gt;:&lt;名稱&gt;</code> —— <b>裡面沒有 class 的位置</b>，所以「誰屬於誰」寫不進去。<br><br>
           最後：<b>圖上沒有任何記號</b>能分辨哪條 edge 是 AST 解析的、哪條是 LLM 猜的。
         </td>
         <td>
@@ -792,7 +810,7 @@ footer b{color:var(--ink-2);font-weight:500}
     <div><span class="cn">3</span><p>解析器抓呼叫的資料結構就設計成逐檔的 —— <b>只有「誰呼叫誰」和行號，沒有欄位記「對方在哪個檔案」</b></p></div>
     <div><span class="cn">4</span><p><b>跨檔案的呼叫沒地方存</b></p></div>
     <div><span class="cn">5</span><p>只好在 edge 規格裡寫：「<i>這個檔案裡的函式呼叫了另一個檔案的函式 —— 從 import 和函式名稱<b>推測</b></i>」</p></div>
-    <div class="last"><span class="cn">!</span><p>原始碼裡<b>有一個建立跨檔案 calls edge 的函式，簽章完全正確</b>（四個參數：來源檔、來源函式、目標檔、目標函式）——<b>但全專案沒有任何一處呼叫它</b></p></div>
+    <div class="last"><span class="cn">!</span><p>而且<b>整張圖都是 LLM 直接產出 JSON</b> —— 專案裡曾經有一層用程式建圖的 TypeScript 程式碼（含正確的跨檔案建邊函式），<b>整層已經棄用、零呼叫點</b>。建圖的職責整個移交給了 LLM</p></div>
   </div>
 
   <p class="sec-intro" style="margin:22px 0 0">
@@ -801,6 +819,83 @@ footer b{color:var(--ink-2);font-weight:500}
     因為那支程式是<b>全域跑一次</b>的，不受逐檔限制。
     <b>同一個專案裡，不受架構限制的部分做得很好，受限制的部分就整段外包給 LLM。</b>
   </p>
+
+  <h3 class="sub">UA 的 edge 到底是誰建的</h3>
+  <p class="sec-intro" style="margin-bottom:18px">
+    「node 用 AST、calls 用 LLM」這個講法太粗。
+    實際上 <b>UA 沒有任何一條 edge 是程式直接寫進圖的</b> ——
+    全部經過 LLM。差別在於 <b>LLM 手上有沒有程式算好的答案可以照抄，以及事後有沒有人去對答案</b>。
+  </p>
+
+  <div class="tiers">
+    <div class="t-ok">
+      <p class="tlabel">兩層都有 · 最終是確定性的</p>
+      <h4><code>imports</code></h4>
+      <p><b>(a) 內容解析</b>　一支 2000 多行的專用程式，全域跑一次，把 <code>"./utils"</code>、<code>"@/lib/auth"</code>、<code>"com.foo.Bar"</code> 這類字串解析成實際檔案路徑</p>
+      <p><b>(b) 建完校正</b>　merge 階段拿那份對照表逐筆比對，<b>把 LLM 漏掉的補回來</b>，補上的標記 <code>recoveredFromImportMap</code></p>
+    </div>
+    <div class="t-mid">
+      <p class="tlabel">只有第一層 · 漏了沒人知道</p>
+      <h4><code>contains</code>　<code>exports</code></h4>
+      <p><b>(a) 內容解析</b>　tree-sitter 抓出本檔案的 function / class 清單 ✓</p>
+      <p><b>(b) 建完校正</b>　<b>沒有。</b>結構資料<b>確實被寫成檔案</b>（<code>tmp/ua-file-extract-results-N.json</code>），但 merge 階段從來沒去讀它 —— <b>不是拿不到資料，是沒接上</b></p>
+    </div>
+    <div class="t-no">
+      <p class="tlabel">兩層都沒有</p>
+      <h4><code>calls</code>　<code>inherits</code>　<code>implements</code>　<code>depends_on</code>　<code>tested_by</code></h4>
+      <p><b>(a) 內容解析</b>　沒有。LLM 只拿到一份「鄰居檔案的 exported symbols 清單」，要自己比對名字決定連哪一個</p>
+      <p><b>(b) 建完校正</b>　只有一個「把指向不存在節點的 edge 丟掉」的守門 —— <b>驗證目標存在，不驗證目標正確</b></p>
+    </div>
+  </div>
+
+  <div class="alarm" style="margin-top:22px">
+    <b>LLM 連「照抄」都會漏掉約 25%。</b><br>
+    這不是我們的推測，是 UA 自己寫在 merge 程式碼註解裡的量測值：
+    「file-analyzer agent 被要求 1:1 謄寫成 edge，
+    <b>但實際在真實專案上會漏掉約 25%</b>」。<br><br>
+    而且這是在<b>最嚴格的條件下</b>量到的 —— 規格明文寫著
+    「<i>Not 90% of it. Not "the meaningful ones". <b>All of them.</b></i>」，
+    還要求 agent 自行加總核對。即使這樣，還是漏四分之一。
+  </div>
+
+  <p class="sec-intro" style="margin:20px 0 0">
+    所以那個 recovery pass <b>不是保險，是必需品</b>。
+    而 <code>contains</code> 走的是<b>完全同一條謄寫路徑</b> ——
+    沒有理由相信它不會漏，<b>只是沒有基準可以發現，也沒有東西去補</b>。
+  </p>
+
+  <div class="trap" style="border-left-color:var(--accent)">
+    <h4 style="color:var(--accent)">他們曾經把一條 edge 從 LLM 換成程式</h4>
+    <p>那支 import 解析程式的檔頭註解寫著：</p>
+    <p style="padding-left:14px;border-left:2px solid var(--rule-strong)">
+      「<b>取代了</b> <code>agents/project-scanner.md</code> 裡<b>由 LLM 撰寫的 prose 版 import 解析器</b>
+      （原本的做法是用文字描述各語言的模式；<b>執行期的 LLM 產出的是不一致、只會寫 regex、覆蓋率稀疏的腳本</b>）。」
+    </p>
+    <p>這一段同時證明三件事：</p>
+    <ul>
+      <li>他們<b>知道</b> LLM 產的 edge 不可靠 —— 而且有實測的失敗經驗</li>
+      <li>他們<b>有能力也真的動手</b>把一條 edge 從 LLM 改成確定性程式</li>
+      <li>但<b>還沒對 <code>calls</code> 做同樣的事</b></li>
+    </ul>
+  </div>
+
+  <div class="trap" style="border-left-color:var(--heur)">
+    <h4 style="color:var(--heur)">為什麼偏偏是 import 被補起來？</h4>
+    <p>
+      因為 <b>import 的漏失看得出來</b>。
+      importMap 是一份完整的「檔案 → 目標檔案」對照表，可以逐筆比對；
+      而且 import 是整張檔案依賴圖的骨幹，漏掉四分之一的話，畫面上的圖會<b>明顯斷裂</b>。
+    </p>
+    <p>
+      相對地，<code>contains</code> 少一個 function 節點的連線，圖看起來<b>完全正常</b>；
+      <code>calls</code> 漏掉或連錯，<b>更是完全無法察覺</b>。
+    </p>
+    <p>
+      <b>被修的，剛好是漏掉會被肉眼看出來的那一條。</b>
+      這不是針對 UA 的批評 —— 這是自動建圖的通則：
+      <b>你只會修你量得到的東西；量不到的那些，不會因為沒人抱怨就是對的。</b>
+    </p>
+  </div>
 
   <h3 class="sub">UA 還缺兩條關鍵 edge</h3>
   <p class="sec-intro" style="margin-bottom:18px">
