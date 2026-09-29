@@ -273,6 +273,69 @@ return new ArrayList<UserVO>();                  // 型別當泛型參數
 剩下的 `calls` 又是 LLM 猜的 ——
 所以 UA 的圖真正紮實的部分，其實只有 **`file → file` 的 import 關係**。
 
+### 跨語言的 edge：只有一條，而且有但書
+
+前面談的都是**同一種語言內**的 edge。那前端呼叫後端 API、
+Java 服務呼叫另一個 Java 服務 —— 這類**跨越語言或跨越服務**的關係，三套接得起來嗎？
+
+| 工具 | 跨語言 | 實際情況 |
+|---|---|---|
+| **Understand-Anything** | ❌ **沒有機制** | LLM 只看得到「自己批次的檔案」加上 neighborMap。而 **neighborMap 是從 import 關係建的** —— import 不跨語言，所以 neighborMap 也不會。它理論上可以亂連，但**沒有任何路徑會讓它看到跨語言的一對**。 |
+| **graphify** | ❌ **刻意阻擋** | 原始碼註解：「沒有這個，Java 的 `Greeter` 會**很開心地綁到另一個 repo 的同名 Python 類別**。」**這是選擇，不是缺陷** —— 純名字比對跨語言的誤連率太高。 |
+| **⭐ codegraph** | ✅ **有一條** | **JS/TS 的 HTTP 呼叫 → 任何語言的 route。**<br>設計思路寫在註解裡：「一個 web app 是**兩個程式在一條圖看不見的線上對話**……**每一跳兩邊都是字串，而那個字串就是把它接起來的證據**。」 |
+
+#### codegraph 那一條怎麼跨得過去
+
+兩個關鍵設計讓它與語言無關：
+
+**① route 索引不分語言**
+
+建索引時直接取**所有 route 節點**，沒有語言過濾。而 Spring 的
+`@GetMapping` / `@PostMapping`、class 層級的 `@RequestMapping` 前綴、
+甚至路徑裡的 `static final String` 常數，**都會被解析成 route 節點**（Java 和 Kotlin 都支援）。
+
+**② 參數語法涵蓋多個生態系**
+
+比對路徑時，參數段的規則同時認得四種寫法：
+
+```
+:param   ← Express / NestJS
+{param}  ← Spring / JAX-RS
+[param]  ← Next.js
+<param>  ← Flask / Django
+```
+
+`{` 就是為 Spring 的 `/users/{id}` 準備的。
+
+所以一個 TypeScript 前端的 `fetch('/api/users', { method: 'POST' })`，
+**真的可以連到一個 Java Spring 的 `@PostMapping("/api/users")`**。
+這條 edge 會標成 🟡 推測，並記下 `tier: 'client→server'` 與 route 的註冊位置。
+
+#### ⚠️ 但書：發起端只掃 JS/TS 檔案
+
+整段掃描的第一行就把非 JS/TS 的檔案跳過了 —— 副檔名限 `.js .jsx .ts .tsx .mjs .cjs .mts .cts`。
+
+| 情境 | 接得起來? | 為什麼 |
+|---|---|---|
+| TS 前端 → Java Spring API | ✅ | 發起端是 TS，目標是 route 節點 |
+| **⭐ Java 服務 → 另一個 Java 服務**<br>（RestTemplate / WebClient / Feign） | ❌ | **發起端不是 JS/TS，直接被跳過** |
+| Java → Python API | ❌ | 同上 |
+
+另外兩條通道（queue job、event bus）看起來是 **NestJS / Bull 專屬**
+（`@Processor`、`@InjectQueue`、`@OnEvent`、`@SubscribeMessage`），**兩端都要 JS/TS**。
+
+**所以純 Java 的微服務架構，這條路徑用不上** —— 除非同一個 repo 裡有 JS/TS 前端。
+**Java 服務之間的呼叫，三套都接不起來。**
+
+---
+
+**通則**：跨語言不是「做不到」，而是只有在
+**兩邊都留下同一個字串、而且工具剛好認得那兩種寫法**時才做得到。
+
+codegraph 做了 HTTP 這一條（發起端限 JS/TS），
+graphify 刻意不做（避免同名誤連），
+UA 連機制都沒有。
+
 ### ⚠️ 順帶一個陷阱：weight 不是 confidence
 
 UA 的 edge 規格表給每種 edge 一個固定的 weight：

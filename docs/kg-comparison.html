@@ -326,6 +326,11 @@ section > h3.sub:first-of-type{margin-top:34px}
 .chain p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.6}
 .chain > div.last p{color:var(--ink)}
 
+h4.sub2{
+  font-family:var(--serif);font-weight:600;font-size:15px;
+  margin:28px 0 6px;color:var(--ink);
+}
+
 /* ── 三個等級 ───────────────────────────────── */
 .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
 .tiers > div{border-top:3px solid;padding-top:13px}
@@ -1013,6 +1018,111 @@ return new ArrayList&lt;UserVO&gt;();                  // 型別當泛型參數
     <code>references</code> 讓圖<b>往外看不清</b>（符號的使用者）。
     剩下的 <code>calls</code> 又是 LLM 猜的 ——
     所以 UA 的圖真正紮實的部分，其實只有 <b><code>file → file</code> 的 import 關係</b>。
+  </p>
+
+  <h3 class="sub">跨語言的 edge：只有一條，而且有但書</h3>
+  <p class="sec-intro" style="margin-bottom:18px">
+    前面談的都是<b>同一種語言內</b>的 edge。那前端呼叫後端 API、
+    Java 服務呼叫另一個 Java 服務 —— 這類<b>跨越語言或跨越服務</b>的關係，三套接得起來嗎？
+  </p>
+
+  <div class="scroller">
+  <table>
+    <thead>
+      <tr><th style="width:150px">工具</th><th style="width:110px">跨語言</th><th>實際情況</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th style="color:var(--ua)">Understand-Anything</th>
+        <td><span class="no">沒有機制</span></td>
+        <td>
+          LLM 只看得到「自己批次的檔案」加上 neighborMap。
+          而 <b>neighborMap 是從 import 關係建的</b> —— import 不跨語言，所以 neighborMap 也不會。<br>
+          它理論上可以亂連，但<b>沒有任何路徑會讓它看到跨語言的一對</b>。
+        </td>
+      </tr>
+      <tr>
+        <th style="color:var(--gf)">graphify</th>
+        <td><span class="no">刻意阻擋</span></td>
+        <td>
+          原始碼註解：「沒有這個，Java 的 <code>Greeter</code> 會
+          <b>很開心地綁到另一個 repo 的同名 Python 類別</b>。」<br>
+          <b>這是選擇，不是缺陷</b> —— 純名字比對跨語言的誤連率太高。
+        </td>
+      </tr>
+      <tr class="pivot">
+        <th style="color:var(--cg)">codegraph</th>
+        <td><span class="yes">有一條</span></td>
+        <td>
+          <b>JS/TS 的 HTTP 呼叫 → 任何語言的 route。</b><br>
+          它的設計思路寫在註解裡：「一個 web app 是<b>兩個程式在一條圖看不見的線上對話</b>……
+          <b>每一跳兩邊都是字串，而那個字串就是把它接起來的證據</b>。」
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h4 class="sub2">codegraph 那一條怎麼跨得過去</h4>
+  <p class="sec-intro" style="margin-bottom:14px">兩個關鍵設計讓它與語言無關：</p>
+
+  <div class="steps" style="grid-template-columns:repeat(2,1fr)">
+    <div>
+      <span class="stepno">①</span>
+      <p class="stept">route 索引不分語言</p>
+      <p>建索引時直接取<b>所有 route 節點</b>，沒有語言過濾。而 Spring 的
+      <code>@GetMapping</code> / <code>@PostMapping</code>、class 層級的
+      <code>@RequestMapping</code> 前綴、甚至路徑裡的 <code>static final String</code> 常數，
+      <b>都會被解析成 route 節點</b>（Java 和 Kotlin 都支援）。</p>
+    </div>
+    <div>
+      <span class="stepno">②</span>
+      <p class="stept">參數語法涵蓋多個生態系</p>
+      <p>比對路徑時，參數段的規則同時認得四種寫法：</p>
+<pre class="ex">:param   ← Express / NestJS
+{param}  ← Spring / JAX-RS
+[param]  ← Next.js
+&lt;param&gt;  ← Flask / Django</pre>
+      <p><code>{</code> 就是為 Spring 的 <code>/users/{id}</code> 準備的。</p>
+    </div>
+  </div>
+
+  <p class="sec-intro" style="margin:18px 0 0">
+    所以一個 TypeScript 前端的 <code>fetch('/api/users', { method: 'POST' })</code>，
+    <b>真的可以連到一個 Java Spring 的 <code>@PostMapping("/api/users")</code></b>。
+    這條 edge 會標成 <span class="chip heur">推測</span>，
+    並記下 <code>tier: 'client→server'</code> 與 route 的註冊位置。
+  </p>
+
+  <div class="trap">
+    <h4>但書：發起端只掃 JS/TS 檔案</h4>
+    <p>整段掃描的第一行就把非 JS/TS 的檔案跳過了 —— 副檔名限 <code>.js .jsx .ts .tsx .mjs .cjs .mts .cts</code>。</p>
+    <div class="scroller" style="margin:12px 0">
+    <table>
+      <thead><tr><th style="width:300px">情境</th><th style="width:100px">接得起來?</th><th>為什麼</th></tr></thead>
+      <tbody>
+        <tr><td>TS 前端 → Java Spring API</td><td><span class="yes">✅</span></td><td>發起端是 TS，目標是 route 節點</td></tr>
+        <tr class="pivot"><td><b>Java 服務 → 另一個 Java 服務</b><br>（RestTemplate / WebClient / Feign）</td><td><span class="no">❌</span></td><td><b>發起端不是 JS/TS，直接被跳過</b></td></tr>
+        <tr><td>Java → Python API</td><td><span class="no">❌</span></td><td>同上</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      另外兩條通道（queue job、event bus）看起來是 <b>NestJS / Bull 專屬</b>
+      （<code>@Processor</code>、<code>@InjectQueue</code>、<code>@OnEvent</code>、<code>@SubscribeMessage</code>），<b>兩端都要 JS/TS</b>。
+    </p>
+    <p>
+      <b>所以純 Java 的微服務架構，這條路徑用不上</b> —— 除非同一個 repo 裡有 JS/TS 前端。
+      <b>Java 服務之間的呼叫，三套都接不起來。</b>
+    </p>
+  </div>
+
+  <p class="sec-intro" style="margin:22px 0 0">
+    <b>通則</b>：跨語言不是「做不到」，而是只有在
+    <b>兩邊都留下同一個字串、而且工具剛好認得那兩種寫法</b>時才做得到。<br><br>
+    codegraph 做了 HTTP 這一條（發起端限 JS/TS），
+    graphify 刻意不做（避免同名誤連），
+    UA 連機制都沒有。
   </p>
 
   <div class="trap" style="border-left-color:var(--heur)">
