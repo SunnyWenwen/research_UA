@@ -139,6 +139,85 @@ UA 不是偷懶。它的 calls edge 之所以交給 LLM，是一個**架構決�
 因為那支程式是**全域跑一次**的，不受逐檔限制。
 **同一個專案裡，不受架構限制的部分做得很好，受限制的部分就整段外包給 LLM。**
 
+### UA 還缺兩條關鍵 edge
+
+前面講的是 calls edge **怎麼來**。但 UA 還少了兩種 edge ——
+graphify 和 codegraph 都有，而它一條都沒有。
+一條壞掉**類別內的導航**，一條壞掉**跨符號的影響評估**。
+
+---
+
+#### 缺口 1 — `class → method`：誰屬於誰
+
+UA 的 contains edge **全部是 `file → function` 和 `file → class`** ——
+class 和 method 在圖上是**平輩**，都掛在檔案底下，彼此沒有連線：
+
+```
+file:UserServiceImpl.java
+  ├─ contains → class:UserServiceImpl
+  └─ contains → function:findById      ← 跟 class 平輩，沒有連線
+```
+
+所以這些問題在 UA 的圖上答不出來：
+
+- 「`UserServiceImpl` 這個 class 有哪些 method」
+- 「`findById` 屬於哪個 class」
+- 「改 `BaseEntity` 會影響它子類別的哪些 method」
+
+只能靠檔案路徑間接推論 —— 而**一個檔案有多個 class 時就失效**
+（Java 的 inner class、一個檔案放 DTO + Builder、Kotlin 的多 class 單檔）。
+
+> **這條缺口解釋了一件更根本的事。**
+>
+> graphify 的 method 索引是用 `(class node, method 名稱)` 當 key ——
+> **沒有 `class → method` 這層關係，型別推導的第 ③ 段本來就走不了**，
+> 推到 class 之後無處可去。
+>
+> 所以 UA 不做型別推導，**不只是「選擇不做」，是圖的結構上做不了**。
+
+最可惜的是：**AST 其實抓到了**。
+UA 的結構分析結果有一個 `owner` 欄位（宣告這個 function 的型別），
+各語言的 extractor 真的有填 —— Go 填 receiver type、C++ 填 className、
+Rust 填 `impl` 的型別，三態語意也設計過（空字串＝自由函式、null＝抓不到）。
+
+它被用在**增量更新的變更偵測**和**符號驗證**上，
+**唯獨沒被用來建 edge**。資訊抓到了，在建圖那一步被丟掉。
+
+---
+
+#### 缺口 2 — `references`：誰用了這個符號
+
+UA 只有 `calls` 和 `imports`。但以下這些**都不算 call、也不算 import**：
+
+```java
+private UserStatus status = UserStatus.ACTIVE;   // 引用一個 enum 常數
+void process(OrderDTO dto)                       // 型別被當參數
+return new ArrayList<UserVO>();                  // 型別當泛型參數
+@Value("${app.timeout}")                         // 引用一筆設定
+```
+
+在 graphify 裡 `references` 是**第二高頻**的關係類型
+（54 個產生點，僅次於 `contains`）—— 因為它回答的正是日常最常問的問題。
+
+**後果很具體。**「我要改 `OrderDTO`，誰會受影響？」
+
+| 工具 | 答得出什麼 |
+|---|---|
+| **graphify** | 列出所有把它當**欄位、參數、回傳值、泛型參數**的符號。還可以用 `context` 只看其中一類 |
+| **codegraph** | 同上，而且型別關係另外存成獨立的 edge，語意更明確 |
+| **⭐ UA** | 只答得出**「哪些檔案 import 了它」** |
+
+**粒度從「符號」掉到「檔案」。**
+一個 500 行的檔案 import 了 `OrderDTO`，你還是得整個讀完才知道哪裡用到 ——
+而這正是知識圖譜本來要省掉的工。
+
+---
+
+**兩條缺口合起來看**：`class → method` 讓圖**往內看不清**（類別的組成），
+`references` 讓圖**往外看不清**（符號的使用者）。
+剩下的 `calls` 又是 LLM 猜的 ——
+所以 UA 的圖真正紮實的部分，其實只有 **`file → file` 的 import 關係**。
+
 ### ⚠️ 順帶一個陷阱：weight 不是 confidence
 
 UA 的 edge 規格表給每種 edge 一個固定的 weight：

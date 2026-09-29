@@ -321,6 +321,27 @@ section > h3.sub:first-of-type{margin-top:34px}
 .chain p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.6}
 .chain > div.last p{color:var(--ink)}
 
+/* ── 缺口區塊 ───────────────────────────────── */
+.gap{
+  border:1px solid var(--rule-strong);
+  border-left:3px solid var(--ua);
+  background:var(--surface);
+  padding:18px 20px;margin-top:18px;
+}
+.gapno{
+  font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--ua);margin:0 0 6px;
+}
+.gap h4{
+  font-family:var(--serif);font-size:17px;font-weight:600;
+  margin:0 0 12px;color:var(--ink);
+}
+.gap h4 code{font-size:15px}
+.gap p{margin:0 0 12px;font-size:13.5px;color:var(--ink-2);line-height:1.65}
+.gap p:last-child{margin-bottom:0}
+.gap ul{margin:0 0 12px;padding-left:22px;font-size:13.5px;color:var(--ink-2);line-height:1.7}
+.gap .scroller{margin:4px 0 0}
+
 /* ── 高亮警示塊（表格內） ───────────────────── */
 .alarm{
   background:var(--llm-bg);
@@ -779,6 +800,99 @@ footer b{color:var(--ink-2);font-weight:500}
     這也解釋了一個看似矛盾的現象：<b>UA 的 import edge 反而做得特別紮實</b>（有一支 2000 多行的專用程式處理路徑別名、套件設定檔）——
     因為那支程式是<b>全域跑一次</b>的，不受逐檔限制。
     <b>同一個專案裡，不受架構限制的部分做得很好，受限制的部分就整段外包給 LLM。</b>
+  </p>
+
+  <h3 class="sub">UA 還缺兩條關鍵 edge</h3>
+  <p class="sec-intro" style="margin-bottom:18px">
+    前面講的是 calls edge <b>怎麼來</b>。但 UA 還少了兩種 edge ——
+    graphify 和 codegraph 都有，而它一條都沒有。
+    一條壞掉<b>類別內的導航</b>，一條壞掉<b>跨符號的影響評估</b>。
+  </p>
+
+  <div class="gap">
+    <p class="gapno">缺口 1</p>
+    <h4><code>class → method</code>　誰屬於誰</h4>
+    <p>
+      UA 的 contains edge <b>全部是 <code>file → function</code> 和 <code>file → class</code></b> ——
+      class 和 method 在圖上是<b>平輩</b>，都掛在檔案底下，彼此沒有連線：
+    </p>
+<pre class="ex">file:UserServiceImpl.java
+  ├─ contains → class:UserServiceImpl
+  └─ contains → function:findById      ← 跟 class 平輩，沒有連線</pre>
+    <p>所以這些問題在 UA 的圖上答不出來：</p>
+    <ul>
+      <li>「<code>UserServiceImpl</code> 這個 class 有哪些 method」</li>
+      <li>「<code>findById</code> 屬於哪個 class」</li>
+      <li>「改 <code>BaseEntity</code> 會影響它子類別的哪些 method」</li>
+    </ul>
+    <p>
+      只能靠檔案路徑間接推論 —— 而<b>一個檔案有多個 class 時就失效</b>
+      （Java 的 inner class、一個檔案放 DTO + Builder、Kotlin 的多 class 單檔）。
+    </p>
+    <div class="alarm" style="border-left-color:var(--accent);background:var(--accent-soft)">
+      <b style="color:var(--accent)">這條缺口解釋了一件更根本的事。</b><br>
+      graphify 的 method 索引是用 <code>(class node, method 名稱)</code> 當 key ——
+      <b>沒有 <code>class → method</code> 這層關係，型別推導的第 ③ 段本來就走不了</b>。
+      推到 class 之後無處可去。<br><br>
+      所以 UA 不做型別推導，<b>不只是「選擇不做」，是圖的結構上做不了</b>。
+    </div>
+    <p>
+      最可惜的是：<b>AST 其實抓到了</b>。
+      UA 的結構分析結果有一個 <code>owner</code> 欄位（宣告這個 function 的型別），
+      各語言的 extractor 真的有填 —— Go 填 receiver type、C++ 填 className、Rust 填 <code>impl</code> 的型別，
+      三態語意也設計過（空字串＝自由函式、null＝抓不到）。<br><br>
+      它被用在<b>增量更新的變更偵測</b>和<b>符號驗證</b>上，
+      <b>唯獨沒被用來建 edge</b>。資訊抓到了，在建圖那一步被丟掉。
+    </p>
+  </div>
+
+  <div class="gap">
+    <p class="gapno">缺口 2</p>
+    <h4><code>references</code>　誰用了這個符號</h4>
+    <p>
+      UA 只有 <code>calls</code> 和 <code>imports</code>。但以下這些<b>都不算 call、也不算 import</b>：
+    </p>
+<pre class="ex">private UserStatus status = UserStatus.ACTIVE;   // 引用一個 enum 常數
+void process(OrderDTO dto)                       // 型別被當參數
+return new ArrayList&lt;UserVO&gt;();                  // 型別當泛型參數
+@Value("${app.timeout}")                         // 引用一筆設定</pre>
+    <p>
+      在 graphify 裡 <code>references</code> 是<b>第二高頻</b>的關係類型
+      （54 個產生點，僅次於 <code>contains</code>）——
+      因為它回答的正是日常最常問的問題。
+    </p>
+    <p><b>後果很具體。</b>「我要改 <code>OrderDTO</code>，誰會受影響？」</p>
+    <div class="scroller">
+    <table>
+      <thead><tr><th style="width:150px">工具</th><th>答得出什麼</th></tr></thead>
+      <tbody>
+        <tr>
+          <th style="color:var(--gf)">graphify</th>
+          <td>列出所有把它當<b>欄位、參數、回傳值、泛型參數</b>的符號。還可以用 <code>context</code> 只看其中一類</td>
+        </tr>
+        <tr>
+          <th style="color:var(--cg)">codegraph</th>
+          <td>同上，而且型別關係另外存成獨立的 edge，語意更明確</td>
+        </tr>
+        <tr class="pivot">
+          <th style="color:var(--ua)">UA</th>
+          <td>只答得出<b>「哪些檔案 import 了它」</b></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="margin-top:14px">
+      <b>粒度從「符號」掉到「檔案」。</b>
+      一個 500 行的檔案 import 了 <code>OrderDTO</code>，你還是得整個讀完才知道哪裡用到 ——
+      而這正是知識圖譜本來要省掉的工。
+    </p>
+  </div>
+
+  <p class="sec-intro" style="margin:24px 0 0">
+    <b>兩條缺口合起來看</b>：<code>class → method</code> 讓圖<b>往內看不清</b>（類別的組成），
+    <code>references</code> 讓圖<b>往外看不清</b>（符號的使用者）。
+    剩下的 <code>calls</code> 又是 LLM 猜的 ——
+    所以 UA 的圖真正紮實的部分，其實只有 <b><code>file → file</code> 的 import 關係</b>。
   </p>
 
   <div class="trap" style="border-left-color:var(--heur)">
